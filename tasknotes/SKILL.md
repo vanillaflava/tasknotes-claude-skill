@@ -3,12 +3,12 @@ name: tasknotes
 description: Create, read, update, and complete tasks using the Obsidian TaskNotes plugin. Use when the user mentions tasks, to-dos, action items, open items, backlog, or says /tasknotes. Also use for casual mentions like "add that to my list", "don't forget to", "mark X as done", "what's on my plate", "what's open for X", or "what's in progress". Requires filesystem read/write access to the vault.
 compatibility: Requires Obsidian with the TaskNotes plugin (v4+) and Bases core plugin enabled.
 metadata:
-  version: "2.3"
+  version: "2.4"
 ---
 
 # TaskNotes
 
-Performs full task CRUD against an Obsidian vault with the TaskNotes plugin installed. All operations use direct file read/write — no HTTP API, no MCP server. Tasks created by this skill and tasks created via the plugin GUI coexist seamlessly: both write to the same files using the same frontmatter schema.
+Provides basic task CRUD — create, read, update, complete — for users with the TaskNotes plugin installed who want local agent operations without an HTTP API or MCP server. All operations work directly against task files on disk. This skill is a complement to the plugin, not a replacement: tasks created here coexist in the same folder with GUI-created tasks and use the same frontmatter schema, but the skill does not expose the full capabilities the plugin offers through its interface. Where the plugin's GUI and agent behaviour diverge — particularly around project assignment and filename conventions — the agent-creation path is the more reliable one.
 
 ---
 
