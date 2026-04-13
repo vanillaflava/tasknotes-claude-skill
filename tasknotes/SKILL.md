@@ -3,12 +3,12 @@ name: tasknotes
 description: Create, read, update, and complete tasks using the Obsidian TaskNotes plugin. Use when the user mentions tasks, to-dos, action items, open items, backlog, or says /tasknotes. Also use for casual mentions like "add that to my list", "don't forget to", "mark X as done", "what's on my plate", "what's open for X", or "what's in progress". Requires filesystem read/write access to the vault.
 compatibility: Requires Obsidian with the TaskNotes plugin (v4+) and Bases core plugin enabled.
 metadata:
-  version: "2.4"
+  version: "2.5"
 ---
 
 # TaskNotes
 
-Provides basic task CRUD — create, read, update, complete — for users with the TaskNotes plugin installed who want local agent operations without an HTTP API or MCP server. All operations work directly against task files on disk. This skill is a complement to the plugin, not a replacement: tasks created here coexist in the same folder with GUI-created tasks and use the same frontmatter schema, but the skill does not expose the full capabilities the plugin offers through its interface. Where the plugin's GUI and agent behaviour diverge — particularly around project assignment and filename conventions — the agent-creation path is the more reliable one.
+Provides basic task CRUD — create, read, update, complete — for users with the TaskNotes plugin installed who want local agent operations without an HTTP API or MCP server. All operations work directly against task files on disk. This skill is a complement to the plugin, not a replacement: tasks created here coexist in the same folder with GUI-created tasks and use the same frontmatter schema, but the skill does not expose the full capabilities the plugin offers through its interface. Where the plugin's GUI and agent behaviour diverge — particularly around project assignment and filename conventions — the agent-creation path is the more reliable one for purposes of this skill.
 
 ---
 
@@ -234,6 +234,11 @@ Rule of thumb: inline checklists for steps within one task; child task files for
 6. Write file with required frontmatter + relevant optional fields + body
 7. Confirm filename and key fields to the user
 
+**GUI creation note:** Agent creation is the reliable path for correct project assignment and filename conventions. If the user creates tasks via the plugin GUI instead:
+- Use **Show Detailed Options** in the modal to access the project picker — the abbreviated modal only inherits the plugin's configured default project
+- At least one default project must be configured in plugin settings (Settings → TaskNotes) as a safety net; without it, tasks created without "Show Detailed Options" will be orphaned with no `projects:` field
+- The plugin's task folder setting must match `tasks_folder` in `tasknotes-config.md` — verify both after any vault migration or reinstall; a mismatch silently routes GUI tasks to the wrong directory
+
 ### 2. Find / read tasks
 
 **By project:** Search `tasks_folder` for files containing the project wikilink (e.g. `[[Work - Home]]`).
@@ -259,11 +264,24 @@ Never delete task files. Done tasks remain — TaskNotes views filter by status.
 ### 5. List tasks for a domain
 
 1. Read `tasknotes-config.md` for the project wikilink
-2. Search `tasks_folder` for files containing that wikilink
+2. Search `tasks_folder` for files containing that wikilink. Let the search run to full completion — do not stop early. Paginate with `get_more_search_results` until the search session reports no more results before reading or filtering.
 3. Read frontmatter of each match: title, status, priority, due
 4. Present: `in-progress` first, then `open`; skip `done`
 
-### 6. Extend a domain with custom properties
+**Domain signal note:** The project wikilink is the only reliable cross-task domain signal. `contexts:` is a secondary filter within results — use it to narrow a result set, never as a substitute for the wikilink search. Some tasks may have no `contexts:` field at all; never rely on context alone.
+
+### 6. Adopt a GUI-created task
+
+Use when the user asks to fix or tidy up a task created via the plugin GUI that has incorrect or missing fields.
+
+1. Read the task file
+2. Check `projects:` — if absent, add the correct wikilink; if path-prefixed (e.g. `[[Vault/Folder/Note]]`), replace with the bare note title (e.g. `[[Note Title]]`)
+3. Check `tags:` — add `task` if missing
+4. Optionally rename the file to `YYYY-MM-DD-slug.md` convention for consistency — ask the user before renaming
+5. Update `dateModified`
+6. Confirm changes to the user
+
+### 7. Extend a domain with custom properties
 
 Document custom fields in `tasknotes-config.md` under a `domain_extensions:` key. Include them when creating tasks in that domain. Do not add domain-specific fields to tasks from other domains.
 
