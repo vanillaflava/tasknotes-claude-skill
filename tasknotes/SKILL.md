@@ -3,7 +3,7 @@ name: tasknotes
 description: Create, read, update, and complete tasks using the Obsidian TaskNotes plugin. Use when the user mentions tasks, to-dos, action items, open items, backlog, or says /tasknotes. Also use for casual mentions like "add that to my list", "don't forget to", "mark X as done", "what's on my plate", "what's open for X", or "what's in progress". Requires filesystem read/write access to the vault.
 ---
 
-<!-- version: 2.6 -->
+<!-- version: 2.7 -->
 
 # TaskNotes
 
@@ -265,11 +265,17 @@ Never delete task files. Done tasks remain — TaskNotes views filter by status.
 ### 5. List tasks for a domain
 
 1. Read `tasknotes-config.md` for the project wikilink
-2. Search `tasks_folder` for files containing that wikilink. Let the search run to full completion — do not stop early. Paginate with `get_more_search_results` until the search session reports no more results before reading or filtering.
+2. Search `tasks_folder` for files containing that wikilink. Search direct files only — exclude any `Archive/` subfolder from the scan and from all counts. Let the search run to full completion — do not stop early. Paginate with `get_more_search_results` until the search session reports no more results before reading or filtering.
 3. Read frontmatter of each match: title, status, priority, due
 4. Present: `in-progress` first, then `open`; skip `done`
 
 **Domain signal note:** The project wikilink is the only reliable cross-task domain signal. `contexts:` is a secondary filter within results — use it to narrow a result set, never as a substitute for the wikilink search. Some tasks may have no `contexts:` field at all; never rely on context alone.
+
+**Folder health check:** After the scan completes, count total files found and check status distribution. If total files exceed 150 and files with `status: done` or tag `archived` account for a third or more of the total, flag it:
+
+> "Your Tasks folder has [N] files, [X] done or archived. This will slow future scans. Would you like help tidying up?"
+
+If yes, proceed to Workflow 8.
 
 ### 6. Adopt a GUI-created task
 
@@ -285,6 +291,26 @@ Use when the user asks to fix or tidy up a task created via the plugin GUI that 
 ### 7. Extend a domain with custom properties
 
 Document custom fields in `tasknotes-config.md` under a `domain_extensions:` key. Include them when creating tasks in that domain. Do not add domain-specific fields to tasks from other domains.
+
+### 8. Folder housekeeping
+
+Run when the Workflow 5 health check triggers, or when the user asks to tidy up the Tasks folder.
+
+**Step 1: Surface done tasks**
+
+1. Scan `tasks_folder` (direct files only, excluding `Archive/`) for all files with `status: done`
+2. Read title and `completedDate` from each; present sorted by `completedDate` ascending (oldest first) with a total count
+3. Offer to create a Bases view of done tasks at `TaskNotes/Views/done-tasks.base`; if the user agrees, read the existing `kanban-default.base` in `TaskNotes/Views/` for format reference, write a filtered view for `status: done`, and tell the user to open it in Obsidian to work through the list at their own pace
+
+**Step 2: Guide the user through archiving**
+
+Archiving is handled by the plugin, not the skill. Walk the user through the steps (full reference: [tasknotes.dev/settings/general](https://tasknotes.dev/settings/general/)):
+
+- Settings -> TaskNotes -> General -> Move Archived Tasks to Folder: enable
+- Set the destination to a subfolder of `tasks_folder`, e.g. `Tasks/Archive/`, and confirm this path matches `tasks_folder` in `tasknotes-config.md`; the plugin does not read the skill config
+- Open the done tasks list (or the view above) and archive via the plugin GUI
+
+The plugin adds the `archived` tag and moves the file. The agent never scans `Archive/`, so archived tasks drop out of future health check counts automatically.
 
 ---
 
