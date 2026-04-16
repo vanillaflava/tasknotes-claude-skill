@@ -58,15 +58,36 @@ The skill activates automatically for task-related conversational requests or vi
 
 ## Getting started
 
+**Where things need to live**
+
+The skill only works on files the agent can reach. Your filesystem MCP's allowed scope is the boundary. Everything the skill needs - the config file, the TaskNotes folder, task files themselves - must live inside that scope.
+
+TaskNotes defaults to placing its folder at `YourVault/TaskNotes/` with `Tasks/` and `Views/` subfolders inside it. If your MCP scope is your whole vault, that's fine as-is. If your MCP scope is a subfolder of your vault (recommended - exposing less to the LLM), you need to move the TaskNotes folder into that subfolder. The plugin will not follow your scoping decisions; no matter what the config says, if the tasks folder sits outside MCP scope, the skill cannot reach it.
+
+Set it up so the layout inside your MCP scope looks like this:
+
+```
+your-mcp-scope/          ← the folder your MCP is scoped to
+├── tasknotes-config.md  ← drop this here
+└── TaskNotes/
+    ├── Tasks/           ← your task files live here
+    └── Views/           ← .base views
+```
+
+Two plugin settings to get right so the plugin and the skill agree on where tasks live:
+
+- **Settings -> TaskNotes -> General -> Task folder:** point it at the absolute path of the `Tasks/` folder above
+- **Settings -> TaskNotes -> General -> Auto-create task folder:** disable it. Otherwise the plugin may recreate `TaskNotes/` at your vault root (outside your scope), which defeats the scoping work you did
+
 **1. Create tasknotes-config.md (optional)**
 
-If `tasknotes-config.md` is not found, the skill will prompt you for your vault root path, create the config file there, and set up the Tasks folder automatically. You can skip this step and let it happen in conversation.
+If `tasknotes-config.md` is not found, the skill will ask you where to set it up, create the config file, and set up the Tasks folder. You can skip this step and let it happen in conversation.
 
-If you prefer to set it up beforehand, create `tasknotes-config.md` anywhere in your vault. A minimal config:
+If you prefer to set it up beforehand, create `tasknotes-config.md` in your MCP scope root. A minimal config:
 
 ```yaml
 ---
-tasks_folder: /absolute/path/to/TaskNotes/Tasks
+tasks_folder: TaskNotes/Tasks
 
 default_status: open
 default_priority: normal
@@ -83,15 +104,9 @@ contexts:
 ---
 ```
 
-Two things to get right in this config:
+`tasks_folder` is relative to the directory containing this config file. `TaskNotes/Tasks` means "a `TaskNotes/Tasks` folder sitting next to this config file". Keep them together.
 
-**`tasks_folder`** must be an absolute local path that your filesystem MCP can reach. If your vault lives on a cloud sync service (iCloud, OneDrive, Dropbox), use the local sync folder path, not a cloud URL. This path must also match the Task folder setting in the TaskNotes plugin (Settings -> TaskNotes -> Task folder) - if they differ, agent-created and GUI-created tasks will land in different places.
-
-TaskNotes defaults to `YourVault/TaskNotes/` for its folder, with `Tasks/` and `Views/` subfolders inside it. The plugin can auto-create these on first run (Settings -> TaskNotes -> General -> Auto-create task folder). If you are happy with that default location, `tasks_folder` is just that path made absolute.
-
-**Scope your agent's access carefully.** The skill only needs access to the folder where your task files live - it does not need access to your entire vault, let alone your entire filesystem. Before setting up, decide what scope you are comfortable exposing to an LLM and configure your filesystem MCP accordingly. A scoped path (e.g. pointing at `TaskNotes/Tasks` only) is preferable to vault root; vault root is preferable to full filesystem access. If you scope below vault root, make sure the plugin's Task folder setting points to the same location - the plugin's auto-create toggle assumes vault-level access and may not create folders outside that scope. Agents with native filesystem access (such as Claude Code) do not use MCP directory controls and must be scoped separately through their own configuration. The broader the access, the more of your data passes through the LLM - see Privacy below.
-
-**`projects` values must be wikilinks** to existing notes - for example `"[[Work - Home]]"`. A plain string tag is silently accepted by the config but will break the Relationships Widget, which is what surfaces your tasks as a live Kanban on the linked note. Always use the `[[Note Title]]` format.
+`projects` values must be wikilinks to existing notes - for example `"[[Work - Home]]"`. A plain string is silently accepted but will break the Relationships Widget, which is what surfaces your tasks as a live Kanban on the linked note. Always use the `[[Note Title]]` format.
 
 **2. Ask the agent to create a task**
 
@@ -107,7 +122,7 @@ Agent-created tasks use a `YYYY-MM-DD-slug.md` filename convention. Tasks create
 
 TaskNotes has a built-in remedy: **Settings -> TaskNotes -> General -> Move Archived Tasks to Folder**. Enable it and point it at a subfolder like `Tasks/Archive/`. The plugin will then move files there automatically when you archive them, keeping your main task list tidy. TaskNotes scans recursively so those files remain visible to the plugin - but they stay out of your way in the GUI.
 
-Before enabling this, verify that your plugin folder settings and `tasknotes-config.md` are pointing at the same locations. The plugin manages `TaskNotes/`, `TaskNotes/Tasks/`, and the archive subfolder independently from the skill's config - it will not infer from `tasks_folder` in your config file. If they are out of sync, archived tasks will move somewhere neither the plugin nor the agent expects. Check: Settings -> TaskNotes -> General -> Task folder matches the absolute path in `tasks_folder`, and that the archive subfolder you configure sits inside it.
+Before enabling this, verify that your plugin folder settings and `tasknotes-config.md` are pointing at the same locations. The plugin manages `TaskNotes/`, `TaskNotes/Tasks/`, and the archive subfolder independently from the skill's config; it will not infer from `tasks_folder` in your config file. If they are out of sync, archived tasks will move somewhere neither the plugin nor the agent expects. Check: Settings -> TaskNotes -> General -> Task folder resolves to the same folder as `tasks_folder` in your config, and the archive subfolder you configure sits inside it.
 
 This does not fully solve the agent scan problem, since `Tasks/Archive/` is still scanned by the agent. When the folder gets heavy, the skill will flag it and walk you through archiving done tasks via the plugin GUI - presenting a list sorted by age and linking you to the relevant plugin settings.
 
@@ -115,11 +130,33 @@ This does not fully solve the agent scan problem, since `Tasks/Archive/` is stil
 
 **Your vault is not private from your LLM provider.** Any task file the agent reads - title, body, project links, anything you have written in it - is sent to Anthropic (or whichever provider you use) as part of the conversation. This is true even if your vault is stored entirely on local disk. The only data boundary that matters is what the agent is allowed to access.
 
-Think carefully about how much of your vault you want to expose before you start. The skill only needs to reach your Tasks folder - it does not need vault root, and vault root is not recommended. Use your filesystem MCP's access controls to limit scope. If you use Desktop Commander, its `allowedDirectories` setting is the right lever. Anthropic's own filesystem connector scopes to whatever directories you configure at setup. Agents with native filesystem access, such as Claude Code, are not constrained by MCP-level controls and must be scoped separately through their own configuration - this requires explicit attention if you use them.
+Before you start, it helps to think in two scopes:
 
-The filesystem MCP itself may also send data. Desktop Commander, for example, sends anonymised telemetry by default unless you disable it in its config. Check the documentation and privacy settings of any MCP tool you install before connecting it to sensitive material.
+```
+Your machine
+├── Everything else on your filesystem
+└── Your knowledge space (Obsidian vault, markdown reader, notes folder, etc.)
+    ├── Private/          ← medical, financial, personal
+    ├── Sensitive/        ← work confidential, legal, credentials
+    ├── Archive/          ← legacy notes you don't want an LLM near
+    └── Agent Access/     ← the ONLY folder the agent needs
+        ├── tasknotes-config.md
+        └── TaskNotes/
+            ├── Tasks/
+            └── Views/
+```
+
+Give the agent-accessible folder an obvious name - `Agent Access` makes the boundary legible when you set things up and when you revisit later. Everything outside it should be unreachable by the agent. Everything inside it should be something you are comfortable sending to your LLM provider.
+
+Scope your filesystem MCP to that folder. If you use Desktop Commander, its `allowedDirectories` setting is the right lever. Anthropic's own filesystem MCP scopes to whatever directories you configure at setup. Agents with native filesystem access, such as Claude Code, are not constrained by MCP-level controls and must be scoped separately through their own configuration.
+
+The TaskNotes plugin does not respect your MCP scoping decisions. If the plugin's Task folder setting points outside your MCP scope, or auto-create recreates `TaskNotes/` at vault root, the skill cannot reach your tasks. After setting up, verify that both the plugin's Task folder and your `tasknotes-config.md` resolve to the same location inside your MCP scope, and disable Settings -> TaskNotes -> General -> Auto-create task folder so the plugin does not silently undo your setup.
+
+The filesystem MCP you use may also send data of its own. Desktop Commander, for example, sends anonymised telemetry by default unless you disable it in its config. Check the documentation and privacy settings of any MCP tool before connecting it to sensitive material.
 
 What happens to data once it reaches your provider depends on their privacy policy and your account settings. Claude's data handling is described at [anthropic.com/privacy](https://www.anthropic.com/privacy). If you use a different provider, check their policy before proceeding.
+
+**The skill stays in its lane.** Agent skills are instructions, not firewalls; what actually gets done depends on what the agent decides in the moment. This skill is written to confine itself to reading and writing task files in your `tasks_folder` (plus `.base` view files and its own config). For anything that cannot be done with those file operations - changing plugin defaults, adjusting the task tag, configuring archive behaviour, toggling widget settings - the skill is instructed to send you to Obsidian Settings rather than terminal out and edit `data.json` (which would silently fail anyway). This is the correct lane for a task CRUD skill to operate in: TaskNotes is a feature-rich plugin, the skill is a narrow complement, and plugin configuration belongs in the plugin's own GUI.
 
 ## Works well with
 

@@ -3,40 +3,49 @@ name: tasknotes
 description: Create, read, update, and complete tasks using the Obsidian TaskNotes plugin. Use when the user mentions tasks, to-dos, action items, open items, backlog, or says /tasknotes. Also use for casual mentions like "add that to my list", "don't forget to", "mark X as done", "what's on my plate", "what's open for X", or "what's in progress". Requires filesystem read/write access to the vault.
 ---
 
-<!-- version: 2.7 -->
+<!-- version: 2.8 -->
 
 # TaskNotes
 
 **Requirements:** Obsidian with TaskNotes plugin v4+ and the Bases core plugin enabled.
 
-Provides basic task CRUD — create, read, update, complete — for users with the TaskNotes plugin installed who want local agent operations without an HTTP API or MCP server. All operations work directly against task files on disk. This skill is a complement to the plugin, not a replacement: tasks created here coexist in the same folder with GUI-created tasks and use the same frontmatter schema, but the skill does not expose the full capabilities the plugin offers through its interface. Where the plugin's GUI and agent behaviour diverge — particularly around project assignment and filename conventions — the agent-creation path is the more reliable one for purposes of this skill.
+Provides basic task CRUD (create, read, update, complete) for users with the TaskNotes plugin installed who want local agent operations without an HTTP API or MCP server. All operations work directly against task files on disk. This skill is a complement to the plugin, not a replacement: tasks created here coexist in the same folder with GUI-created tasks and use the same frontmatter schema, but the skill does not expose the full capabilities the plugin offers through its interface. Where the plugin's GUI and agent behaviour diverge (particularly around project assignment and filename conventions) the agent-creation path is the more reliable one for purposes of this skill.
 
 ---
 
 ## Configuration
 
 **Finding your config:** Search for `tasknotes-config.md` by filename across accessible directories. Do not assume a path. If found, read it and extract:
-- `tasks_folder` — absolute path to the TaskNotes Tasks folder
-- `default_status` — default status for new tasks
-- `default_priority` — default priority for new tasks
-- `default_tags` — list of tags applied to every task; must include `task`
-- `projects` — pre-registered project notes: maps domain labels to wikilinks
-- `contexts` — optional: maps domain labels to context strings
+- `tasks_folder` - path to the TaskNotes Tasks folder, relative to the directory containing `tasknotes-config.md`
+- `default_status` - default status for new tasks
+- `default_priority` - default priority for new tasks
+- `default_tags` - list of tags applied to every task; must include `task`
+- `projects` - pre-registered project notes: maps domain labels to wikilinks
+- `contexts` - optional: maps domain labels to context strings
 
-**If `tasknotes-config.md` is not found — run init:**
-1. Ask the user: *"I couldn't find tasknotes-config.md. Please provide the absolute path to your vault root."*
-2. Construct the default tasks folder as `<vault_root>/TaskNotes/Tasks`
-3. Write `tasknotes-config.md` to the vault root using the template below
-4. Create `TaskNotes/Tasks/` if it does not exist
+**Resolving `tasks_folder`:**
+1. Join the `tasks_folder` value with the directory containing `tasknotes-config.md` to get the absolute path
+2. Sanity-check the resolved path before using it:
+   - If it resolves outside the directory containing the config file (e.g. uses `../`), stop and ask: "Your tasks folder resolves outside your config directory. Did you mean that?" Proceed only on confirmation.
+   - If the resolved path is not reachable (MCP scope does not include it), stop and tell the user. Do not attempt to widen scope or work around it.
+3. Never silently correct a suspicious path. Ask.
+
+**If `tasknotes-config.md` is not found - run init:**
+1. Ask the user: *"I couldn't find tasknotes-config.md. Where would you like me to set it up? Give me the absolute path to the folder where your task setup should live; this should be inside your MCP scope, with the TaskNotes folder sitting alongside the config."*
+2. Write `tasknotes-config.md` in that folder using the template below, with `tasks_folder: TaskNotes/Tasks`
+3. Create `TaskNotes/Tasks/` inside that folder if it does not exist
+4. Remind the user of two follow-ups in the TaskNotes plugin:
+   - Set Settings -> TaskNotes -> General -> Task folder to match the TaskNotes folder you just created
+   - Disable Settings -> TaskNotes -> General -> Auto-create task folder so the plugin does not recreate `TaskNotes/` at vault root outside the agent's scope
 5. Confirm what was created and proceed
 
-**Config template — write this verbatim when initialising, substituting the user's tasks folder path.**
+**Config template - write this verbatim when initialising. Use `TaskNotes/Tasks` as the relative path unless the user has said otherwise.**
 
 Write the frontmatter block first:
 
 ```
 ---
-tasks_folder: /absolute/path/to/TaskNotes/Tasks
+tasks_folder: TaskNotes/Tasks
 
 default_status: open
 default_priority: normal
@@ -58,45 +67,71 @@ Then write this body immediately after the closing `---`:
 ```markdown
 ## Configuration Guide
 
-**tasks_folder** — Absolute path to the folder where task files are stored.
-Windows example: `C:\Users\yourname\vault\TaskNotes\Tasks`
-macOS/Linux example: `/Users/yourname/vault/TaskNotes/Tasks`
+**tasks_folder** - Path to the folder where task files are stored, relative to the directory containing this config file. `TaskNotes/Tasks` means a `TaskNotes/Tasks` folder sitting alongside this file. Both this config and your TaskNotes folder must be inside the scope your filesystem MCP allows the agent to reach.
 
-**default_status / default_priority** — Applied by the agent to every task it creates directly.
-These are independent of the TaskNotes plugin's own default settings — the plugin defaults
+**default_status / default_priority** - Applied by the agent to every task it creates directly.
+These are independent of the TaskNotes plugin's own default settings; the plugin defaults
 only apply to tasks created through the GUI (modal, NLP, instant conversion). Keep both
 in sync so tasks look consistent regardless of how they were created.
 Edit directly in Obsidian Properties.
 
-**default_tags** — Tags applied to every agent-created task. The `task` tag is required —
+**default_tags** - Tags applied to every agent-created task. The `task` tag is required;
 without it the task is invisible to all TaskNotes views and Bases queries. Additional tags
 are optional. Edit directly in Obsidian Properties.
 
 Note: named `default_tags` rather than `tags` to avoid Obsidian treating this config file
 itself as a task.
 
-**projects and contexts** — These sections appear orange in Obsidian Properties because they
+**projects and contexts** - These sections appear orange in Obsidian Properties because they
 contain nested or mapped values that Obsidian cannot render as simple fields. To edit them,
 switch to Source mode: click the `</>` icon in the top-right corner of the note. Switch back
 to Reading or Live Preview when done.
 
-**projects** — Pre-registered project notes for agent use.
+**projects** - Pre-registered project notes for agent use.
 Maps a domain label to a vault note wikilink written into the task's `projects:` frontmatter
 field. The linked note displays a live Kanban of all tasks pointing to it via the
 Relationships Widget. The note must exist before tasks link to it. Multiple labels can map
 to the same note (e.g. health and tax both pointing to `[[Personal - Home]]`).
 Full reference: https://tasknotes.dev/core-concepts/
 
-**contexts** — Optional semantic sub-domain strings.
+**contexts** - Optional semantic sub-domain strings.
 Maps a domain label to a context string written into the task's `contexts:` frontmatter field.
 Used to filter within a project's Bases views. Values accumulate in the vault and become
 available in the TaskNotes GUI `@` autosuggest as the task base grows.
 Full reference: https://tasknotes.dev/core-concepts/
 
-**tags** — The `task` tag is the only required tag. Configure which tag identifies tasks
-in Settings → General → Task Tag.
+**tags** - The `task` tag is the only required tag. Configure which tag identifies tasks
+in Settings -> General -> Task Tag.
 Full reference: https://tasknotes.dev/settings/task-properties/
 ```
+
+
+---
+
+## What this skill does not do
+
+This skill does basic task CRUD by reading and writing `.md` files in `tasks_folder`. That is the entire lane. TaskNotes is a large, feature-rich plugin; almost everything it does lives outside this skill.
+
+**In scope - the skill can do these:**
+- Create, read, update, complete task files in `tasks_folder`
+- Read and write `.base` view files in `TaskNotes/Views/` (the plugin renders them; we just write the file)
+- Read and write `tasknotes-config.md` itself
+- Read project notes to verify they exist before linking to them
+
+**Out of scope - do not attempt these, even if the user asks:**
+- Editing the plugin's `data.json` (writes are silently overwritten when Obsidian closes - no error, no warning, and the user is left wondering why nothing changed)
+- Running shell commands to modify plugin state, reach the HTTP API, or manipulate Obsidian's workspace
+- Replicating event-driven plugin behaviours (archive moves, recurrence instances, reminder scheduling, time tracking, Pomodoro, NLP inline conversion)
+- Modifying Obsidian settings, plugin settings, or any file under `.obsidian/`
+
+**When the user asks for something out of scope:** do not improvise a workaround. Tell them it is a plugin setting, cite the specific Obsidian path (e.g. Settings -> TaskNotes -> General -> Task folder), and link to the relevant tasknotes.dev reference if one exists. The skill is a responsible complement to the plugin, not a substitute.
+
+**Examples:**
+- *"Change my default task priority to high"* -> Settings -> TaskNotes -> Defaults & Templates. Do not edit `data.json`.
+- *"Make the archive auto-move to another folder"* -> Settings -> TaskNotes -> General -> Move Archived Tasks to Folder.
+- *"Set up a Kanban view of my open work tasks"* -> in scope: write a `.base` file to `TaskNotes/Views/`, the plugin renders it.
+- *"Mark this task as archived"* -> out of scope for file writes (archive is event-driven). Surface the done tasks via Workflow 8, guide the user to archive via the plugin GUI.
+
 
 
 ---
@@ -111,7 +146,7 @@ This skill requires **filesystem read and write access**. If running on a surfac
 
 Each task is a `.md` file in the configured `tasks_folder`. Filename convention: `YYYY-MM-DD-slug.md` where slug is the title lowercased with spaces as hyphens.
 
-**Required fields — every agent-created task must include all of these:**
+**Required fields - every agent-created task must include all of these:**
 
 ```yaml
 ---
@@ -127,7 +162,7 @@ dateModified: 2026-04-11T10:00:00.000+02:00
 
 Use `default_status`, `default_priority`, and `tags` from config for the values above.
 
-**Optional fields — add only as needed:**
+**Optional fields - add only as needed:**
 
 ```yaml
 projects:
@@ -143,7 +178,7 @@ blockedBy: []
 
 `projects:` must be a wikilink to a real vault note. A plain string (e.g. `- work`) creates no backlink, triggers no Relationships Widget, and is silently broken.
 
-**Timestamp format:** ISO 8601 with milliseconds and timezone offset — `2026-04-11T10:00:00.000+02:00`. Match the format of existing task files in the vault.
+**Timestamp format:** ISO 8601 with milliseconds and timezone offset, e.g. `2026-04-11T10:00:00.000+02:00`. Match the format of existing task files in the vault.
 
 **Task body:** Write enough context that any agent or human can pick up the task without the originating chat. Include: what needs doing and why, acceptance criteria as inline checklist items, constraints, links to related notes.
 
@@ -153,16 +188,16 @@ blockedBy: []
 
 TaskNotes provides three organisational properties. They are all optional beyond the mandatory `task` tag, but using them unlocks filtering, views, and the Relationships Widget.
 
-**`projects:` — project note link**
-A wikilink to a vault note that owns this task. When a task's `projects:` field points to a note, the Relationships Widget on that note automatically shows a live Kanban of all tasks pointing to it — no setup required beyond the link existing. One task can belong to multiple projects. Any vault note can serve as a project note: a dedicated project page, a domain home note, or a simple "Work tasks" note you create for the purpose.
+**`projects:` - project note link**
+A wikilink to a vault note that owns this task. When a task's `projects:` field points to a note, the Relationships Widget on that note automatically shows a live Kanban of all tasks pointing to it, no setup required beyond the link existing. One task can belong to multiple projects. Any vault note can serve as a project note: a dedicated project page, a domain home note, or a simple "Work tasks" note you create for the purpose.
 
 The agent uses the `projects:` map in `tasknotes-config.md` as a lookup table to know which note to link without asking every time. Register a note there before creating tasks for that domain.
 
-**`contexts:` — context label**
+**`contexts:` - context label**
 A free-form string describing where or how the task gets done (GTD-style: `@home`, `@computer`, `@meetings`). Does not drive the Relationships Widget. Used to filter within a project's Bases views. Multiple contexts per task are allowed. As context strings accumulate in the vault they become available in the TaskNotes GUI `@` autosuggest.
 
-**`tags:` — Obsidian tags**
-The `task` tag (set in defaults) is the only required tag — it is how TaskNotes identifies task files. Additional tags are optional. Configure which tag identifies tasks in Settings → General → Task Tag.
+**`tags:` - Obsidian tags**
+The `task` tag (set in defaults) is the only required tag; it is how TaskNotes identifies task files. Additional tags are optional. Configure which tag identifies tasks in Settings -> General -> Task Tag.
 
 Full reference: https://tasknotes.dev/core-concepts/
 
@@ -172,13 +207,13 @@ Full reference: https://tasknotes.dev/core-concepts/
 
 The Relationships Widget is a TaskNotes v4 feature that renders relationship data directly on vault notes.
 
-The relevant tab for project notes is **Subtasks (Kanban)**: shows all tasks whose `projects:` field contains a wikilink to the current note, rendered as a Kanban grouped by status. This works on any vault note — not just task files.
+The relevant tab for project notes is **Subtasks (Kanban)**: shows all tasks whose `projects:` field contains a wikilink to the current note, rendered as a Kanban grouped by status. This works on any vault note, not just task files.
 
 The widget is entirely automatic and reactive. When you open a note, TaskNotes queries the vault for tasks pointing to it and renders the widget. If no tasks reference the note, the widget does not appear.
 
 **Configuration is global, not per-note:**
-- On/off: Settings → TaskNotes → Appearance → UI Elements → Relationships Widget
-- Position: Settings → TaskNotes → Appearance → UI Elements → Relationships Position (top or bottom)
+- On/off: Settings -> TaskNotes -> Appearance -> UI Elements -> Relationships Widget
+- Position: Settings -> TaskNotes -> Appearance -> UI Elements -> Relationships Position (top or bottom)
 
 Other tabs (Projects, Blocked By, Blocking) appear when dependency relationships exist between task files.
 
@@ -192,10 +227,10 @@ Full reference: https://tasknotes.dev/features/inline-tasks/
 On every task creation:
 1. Read `tasknotes-config.md` and locate the `projects` map
 2. Identify the right project note for this task's domain
-3. Verify the project note exists in the vault — do not create a task linking to a non-existent note
+3. Verify the project note exists in the vault; do not create a task linking to a non-existent note
 4. If the note does not exist: stop, inform the user, offer to create it first
 5. If no entry matches the domain: present the known project list and ask which applies, or whether a new entry should be added to config first
-6. Never write a task with a plain string in `projects:` — always a wikilink
+6. Never write a task with a plain string in `projects:`, always a wikilink
 
 **Adding a new project:**
 1. Confirm the note name and location with the user
@@ -209,7 +244,7 @@ On every task creation:
 
 ## Subtask Model
 
-**Tier 1 — Inline checklists:** Steps or acceptance criteria within a single task. Bases views show checklist progress automatically.
+**Tier 1 - Inline checklists:** Steps or acceptance criteria within a single task. Bases views show checklist progress automatically.
 
 ```markdown
 ## Acceptance criteria
@@ -217,7 +252,7 @@ On every task creation:
 - [ ] Step two
 ```
 
-**Tier 2 — Child task files:** When a subtask warrants its own status and notes, create it as a normal task file and set its `projects:` to a wikilink of the parent task title. The Relationships Widget surfaces child tasks in the parent's Subtasks tab automatically.
+**Tier 2 - Child task files:** When a subtask warrants its own status and notes, create it as a normal task file and set its `projects:` to a wikilink of the parent task title. The Relationships Widget surfaces child tasks in the parent's Subtasks tab automatically.
 
 Rule of thumb: inline checklists for steps within one task; child task files for work substantial enough to need its own status tracking.
 
@@ -236,9 +271,9 @@ Rule of thumb: inline checklists for steps within one task; child task files for
 7. Confirm filename and key fields to the user
 
 **GUI creation note:** Agent creation is the reliable path for correct project assignment and filename conventions. If the user creates tasks via the plugin GUI instead:
-- Use **Show Detailed Options** in the modal to access the project picker — the abbreviated modal only inherits the plugin's configured default project
-- At least one default project must be configured in plugin settings (Settings → TaskNotes) as a safety net; without it, tasks created without "Show Detailed Options" will be orphaned with no `projects:` field
-- The plugin's task folder setting must match `tasks_folder` in `tasknotes-config.md` — verify both after any vault migration or reinstall; a mismatch silently routes GUI tasks to the wrong directory
+- Use **Show Detailed Options** in the modal to access the project picker; the abbreviated modal only inherits the plugin's configured default project
+- At least one default project must be configured in plugin settings (Settings -> TaskNotes) as a safety net; without it, tasks created without "Show Detailed Options" will be orphaned with no `projects:` field
+- The plugin's task folder setting must match `tasks_folder` in `tasknotes-config.md`; verify both after any vault migration or reinstall. A mismatch silently routes GUI tasks to the wrong directory.
 
 ### 2. Find / read tasks
 
@@ -260,16 +295,16 @@ Always read the file first. Use surgical edits. Always update `dateModified` alo
 3. Add `completedDate: YYYY-MM-DD`
 4. Update `dateModified`
 
-Never delete task files. Done tasks remain — TaskNotes views filter by status.
+Never delete task files. Done tasks remain; TaskNotes views filter by status.
 
 ### 5. List tasks for a domain
 
 1. Read `tasknotes-config.md` for the project wikilink
-2. Search `tasks_folder` for files containing that wikilink. Search direct files only — exclude any `Archive/` subfolder from the scan and from all counts. Let the search run to full completion — do not stop early. Paginate with `get_more_search_results` until the search session reports no more results before reading or filtering.
+2. Search `tasks_folder` for files containing that wikilink. Search direct files only; exclude any `Archive/` subfolder from the scan and from all counts. Let the search run to full completion, do not stop early. Paginate with `get_more_search_results` until the search session reports no more results before reading or filtering.
 3. Read frontmatter of each match: title, status, priority, due
 4. Present: `in-progress` first, then `open`; skip `done`
 
-**Domain signal note:** The project wikilink is the only reliable cross-task domain signal. `contexts:` is a secondary filter within results — use it to narrow a result set, never as a substitute for the wikilink search. Some tasks may have no `contexts:` field at all; never rely on context alone.
+**Domain signal note:** The project wikilink is the only reliable cross-task domain signal. `contexts:` is a secondary filter within results; use it to narrow a result set, never as a substitute for the wikilink search. Some tasks may have no `contexts:` field at all; never rely on context alone.
 
 **Folder health check:** After the scan completes, count total files found and check status distribution. If total files exceed 150 and files with `status: done` or tag `archived` account for a third or more of the total, flag it:
 
@@ -282,9 +317,9 @@ If yes, proceed to Workflow 8.
 Use when the user asks to fix or tidy up a task created via the plugin GUI that has incorrect or missing fields.
 
 1. Read the task file
-2. Check `projects:` — if absent, add the correct wikilink; if path-prefixed (e.g. `[[Vault/Folder/Note]]`), replace with the bare note title (e.g. `[[Note Title]]`)
-3. Check `tags:` — add `task` if missing
-4. Optionally rename the file to `YYYY-MM-DD-slug.md` convention for consistency — ask the user before renaming
+2. Check `projects:`. If absent, add the correct wikilink; if path-prefixed (e.g. `[[Vault/Folder/Note]]`), replace with the bare note title (e.g. `[[Note Title]]`)
+3. Check `tags:`. Add `task` if missing
+4. Optionally rename the file to `YYYY-MM-DD-slug.md` convention for consistency; ask the user before renaming
 5. Update `dateModified`
 6. Confirm changes to the user
 
@@ -324,14 +359,15 @@ Full reference: https://tasknotes.dev/views/
 
 ## Safety Rules
 
-1. Never delete task files — use `status: done` + `completedDate` instead
-2. Never modify `dateCreated` — set once on creation, never changed
+1. Never delete task files - use `status: done` + `completedDate` instead
+2. Never modify `dateCreated` - set once on creation, never changed
 3. Always update `dateModified` on every edit
-4. Always include `tags: - task` in task frontmatter — without it the task is invisible to all views; read `default_tags` from config to confirm the required value
-5. `projects:` must be a wikilink — plain strings are silently broken
-6. The project note must exist before a task links to it — verify or create it first
-7. Read before editing — never overwrite from stale context
+4. Always include `tags: - task` in task frontmatter - without it the task is invisible to all views; read `default_tags` from config to confirm the required value
+5. `projects:` must be a wikilink - plain strings are silently broken
+6. The project note must exist before a task links to it - verify or create it first
+7. Read before editing - never overwrite from stale context
 8. Unknown projects require a config update first
+9. Stay in lane - see *What this skill does not do*. Never edit plugin `data.json`; never shell out to change plugin state. Plugin config changes go through Obsidian Settings, not the skill.
 
 ---
 
@@ -339,4 +375,4 @@ Full reference: https://tasknotes.dev/views/
 
 Vaults stored in cloud sync services may have files not locally downloaded, appearing as zero-byte placeholders. If a file read returns empty unexpectedly, flag it as a possible sync issue and ask the user to confirm before retrying.
 
-Erratic plugin behaviour (settings not persisting, widget position jumping) is environment-specific — inform the user and do not attempt to fix it via file edits.
+Erratic plugin behaviour (settings not persisting, widget position jumping) is environment-specific; inform the user and do not attempt to fix it via file edits.
