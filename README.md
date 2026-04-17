@@ -6,11 +6,11 @@ A Claude agent skill for basic task management against an Obsidian vault with th
 
 ## What this is
 
-A single installable skill that lets a Claude agent create, read, update, and complete tasks by reading and writing Markdown files directly on disk: no API, no server, no HTTP calls. Tasks are `.md` files with YAML frontmatter; the skill reads a config file to know where they live and how to route them to the right project.
+A single installable skill that lets you talk to your tasks. Ask what's open, create a new one from conversation, mark something done, or let the agent manage its own Kanban board - all backed by plain Markdown files in your Obsidian vault. No API, no server, no HTTP calls.
 
-This skill works at the file level only. It does not use the TaskNotes HTTP API, NLP engine, or any GUI workflow. What it does is narrow and deliberate: it reads and writes task files in the format TaskNotes expects, so tasks created by the agent coexist in the same folder with tasks created via the plugin GUI.
+Tasks are `.md` files with YAML frontmatter. The skill reads a config file to know where they live and how to route them to the right project. It coexists cleanly with the TaskNotes plugin - tasks the agent creates sit in the same folder as tasks you create via the GUI, using the same schema.
 
-The reason to use this approach rather than the API: no setup overhead, no requirement for Obsidian to be running, no port configuration, and no dependency on desktop-only features. If the filesystem MCP can reach your vault folder, the skill works.
+I use this for personal projects, work tracking, and the meta-work of running agent sessions themselves: the agents file their own tasks, track what needs doing across sessions, and hand off cleanly to whoever picks up the work next. If the filesystem MCP can reach your vault, it just works.
 
 ## What a task actually is
 
@@ -160,7 +160,11 @@ What happens to data once it reaches your provider depends on their privacy poli
 
 ## Works well with
 
-[llm-wiki-claude-skills](https://github.com/vanillaflava/llm-wiki-claude-skills) - the llm wiki skills (my personal implementation of the [llm wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) pattern) and this skill were designed alongside each other. Domain home pages in the wiki make natural project anchors for the Relationships Widget, and tasks captured via the agent feed into the same compounding knowledge system. Neither requires the other.
+[llm-wiki-claude-skills](https://github.com/vanillaflava/llm-wiki-claude-skills) - my personal implementation of the [llm wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) pattern, and the reason this skill exists in the form it does.
+
+The two together form a proper memory layer. The wiki carries accumulated knowledge - synthesised, crystallised, cross-linked. The tasks carry current intent: what is open, what was decided but not yet executed, what the next session needs to pick up. A fresh agent - whether that is a new chat cycle or a completely different domain agent picking up related work - reads the Kanban and knows exactly where things stand without anyone briefing them. The knowledge does not live in the chat history (that evaporates). It lives in the wiki and the tasks.
+
+Domain home pages in the wiki make natural project anchors for the Relationships Widget. Tasks the agent files feed into the same compounding system. Neither requires the other, but the combination is where the interesting stuff happens.
 
 ## License
 

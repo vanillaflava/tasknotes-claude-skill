@@ -3,13 +3,35 @@ name: tasknotes
 description: Create, read, update, and complete tasks using the Obsidian TaskNotes plugin. Use when the user mentions tasks, to-dos, action items, open items, backlog, or says /tasknotes. Also use for casual mentions like "add that to my list", "don't forget to", "mark X as done", "what's on my plate", "what's open for X", or "what's in progress". Requires filesystem read/write access to the vault.
 ---
 
-<!-- version: 2.8 -->
+<!-- version: 2.9 -->
 
 # TaskNotes
 
 **Requirements:** Obsidian with TaskNotes plugin v4+ and the Bases core plugin enabled.
 
-Provides basic task CRUD (create, read, update, complete) for users with the TaskNotes plugin installed who want local agent operations without an HTTP API or MCP server. All operations work directly against task files on disk. This skill is a complement to the plugin, not a replacement: tasks created here coexist in the same folder with GUI-created tasks and use the same frontmatter schema, but the skill does not expose the full capabilities the plugin offers through its interface. Where the plugin's GUI and agent behaviour diverge (particularly around project assignment and filename conventions) the agent-creation path is the more reliable one for purposes of this skill.
+## What this is
+
+**The skill stays in its lane.** It reads and writes `.md` task files on disk - it does not touch Obsidian settings, plugin state, or any `.json` config files.
+
+**Does:**
+- Create, read, update, and complete (`status: done` + `completedDate`) task files in `tasks_folder`
+- Read and write `.base` view files in `TaskNotes/Views/`
+- Read and write `tasknotes-config.md` itself
+- Read project notes to verify they exist before linking to them
+
+**Does not - do not attempt these, even if the user asks:**
+- Modify Obsidian settings, plugin settings, or any file under `.obsidian/`
+- Edit plugin `.json` config files (writes are silently overwritten when Obsidian closes - no error, no warning)
+- Shell out to reach the HTTP API or anything outside `tasks_folder` scope
+- Replicate event-driven plugin behaviours: archiving, recurrence, reminders, time tracking, Pomodoro, NLP conversion
+
+**Why the docs matter before improvising:**
+- *"Change my default task priority"* → Settings -> TaskNotes -> Defaults & Templates. Editing plugin files does nothing - Obsidian overwrites them silently on close.
+- *"Auto-move archived tasks"* → Settings -> TaskNotes -> General -> Move Archived Tasks to Folder.
+- *"Mark this task as archived"* → archive is event-driven; writing `archived: true` to a file does nothing. Set `status: done`, guide the user to archive via the plugin GUI (Workflow 8).
+- *"Set up a Kanban view"* → in scope: write a `.base` file to `TaskNotes/Views/`, the plugin renders it.
+
+**When in doubt:** check [tasknotes.dev](https://tasknotes.dev/) before acting. If a request cannot be fulfilled by reading or writing a `.md` file, decline politely - tell the user it is a plugin setting, cite the specific Obsidian path, and link the relevant docs.
 
 ---
 
@@ -105,35 +127,6 @@ in Settings -> General -> Task Tag.
 Full reference: https://tasknotes.dev/settings/task-properties/
 ```
 
-
----
-
-## What this skill does not do
-
-This skill does basic task CRUD by reading and writing `.md` files in `tasks_folder`. That is the entire lane. TaskNotes is a large, feature-rich plugin; almost everything it does lives outside this skill.
-
-**In scope - the skill can do these:**
-- Create, read, update, complete task files in `tasks_folder`
-- Read and write `.base` view files in `TaskNotes/Views/` (the plugin renders them; we just write the file)
-- Read and write `tasknotes-config.md` itself
-- Read project notes to verify they exist before linking to them
-
-**Out of scope - do not attempt these, even if the user asks:**
-- Editing the plugin's `data.json` (writes are silently overwritten when Obsidian closes - no error, no warning, and the user is left wondering why nothing changed)
-- Running shell commands to modify plugin state, reach the HTTP API, or manipulate Obsidian's workspace
-- Replicating event-driven plugin behaviours (archive moves, recurrence instances, reminder scheduling, time tracking, Pomodoro, NLP inline conversion)
-- Modifying Obsidian settings, plugin settings, or any file under `.obsidian/`
-
-**When the user asks for something out of scope:** do not improvise a workaround. Tell them it is a plugin setting, cite the specific Obsidian path (e.g. Settings -> TaskNotes -> General -> Task folder), and link to the relevant tasknotes.dev reference if one exists. The skill is a responsible complement to the plugin, not a substitute.
-
-**Examples:**
-- *"Change my default task priority to high"* -> Settings -> TaskNotes -> Defaults & Templates. Do not edit `data.json`.
-- *"Make the archive auto-move to another folder"* -> Settings -> TaskNotes -> General -> Move Archived Tasks to Folder.
-- *"Set up a Kanban view of my open work tasks"* -> in scope: write a `.base` file to `TaskNotes/Views/`, the plugin renders it.
-- *"Mark this task as archived"* -> out of scope for file writes (archive is event-driven). Surface the done tasks via Workflow 8, guide the user to archive via the plugin GUI.
-
-
-
 ---
 
 ## Capability Requirements
@@ -186,20 +179,13 @@ blockedBy: []
 
 ## Organisation: Projects, Contexts, and Tags
 
-TaskNotes provides three organisational properties. They are all optional beyond the mandatory `task` tag, but using them unlocks filtering, views, and the Relationships Widget.
+| Field | Purpose | Drives Relationships Widget | Notes |
+|---|---|---|---|
+| `projects:` | Links task to a vault note; that note shows a live Kanban of all tasks pointing to it | Yes | Must be a `[[wikilink]]`. Plain strings are silently broken. |
+| `contexts:` | Semantic sub-domain label (`@meetings`, `@computer`) for filtering within a project's views | No | Free-form string. Multiple per task. |
+| `tags:` | Identifies the file as a task to the plugin | No | `task` is required. Without it the file is invisible to all TaskNotes views. |
 
-**`projects:` - project note link**
-A wikilink to a vault note that owns this task. When a task's `projects:` field points to a note, the Relationships Widget on that note automatically shows a live Kanban of all tasks pointing to it, no setup required beyond the link existing. One task can belong to multiple projects. Any vault note can serve as a project note: a dedicated project page, a domain home note, or a simple "Work tasks" note you create for the purpose.
-
-The agent uses the `projects:` map in `tasknotes-config.md` as a lookup table to know which note to link without asking every time. Register a note there before creating tasks for that domain.
-
-**`contexts:` - context label**
-A free-form string describing where or how the task gets done (GTD-style: `@home`, `@computer`, `@meetings`). Does not drive the Relationships Widget. Used to filter within a project's Bases views. Multiple contexts per task are allowed. As context strings accumulate in the vault they become available in the TaskNotes GUI `@` autosuggest.
-
-**`tags:` - Obsidian tags**
-The `task` tag (set in defaults) is the only required tag; it is how TaskNotes identifies task files. Additional tags are optional. Configure which tag identifies tasks in Settings -> General -> Task Tag.
-
-Full reference: https://tasknotes.dev/core-concepts/
+The agent uses the `projects:` map in `tasknotes-config.md` as a lookup table. Register a note there before creating tasks for that domain. Full reference: https://tasknotes.dev/core-concepts/
 
 ---
 
@@ -306,11 +292,7 @@ Never delete task files. Done tasks remain; TaskNotes views filter by status.
 
 **Domain signal note:** The project wikilink is the only reliable cross-task domain signal. `contexts:` is a secondary filter within results; use it to narrow a result set, never as a substitute for the wikilink search. Some tasks may have no `contexts:` field at all; never rely on context alone.
 
-**Folder health check:** After the scan completes, count total files found and check status distribution. If total files exceed 150 and files with `status: done` or tag `archived` account for a third or more of the total, flag it:
-
-> "Your Tasks folder has [N] files, [X] done or archived. This will slow future scans. Would you like help tidying up?"
-
-If yes, proceed to Workflow 8.
+**Folder health check:** After the scan: if >150 total files and done/archived account for a third or more, flag it - "Your Tasks folder has [N] files, [X] done or archived. This will slow future scans. Would you like help tidying up?" If yes, go to Workflow 8.
 
 ### 6. Adopt a GUI-created task
 
@@ -347,6 +329,22 @@ Archiving is handled by the plugin, not the skill. Walk the user through the ste
 
 The plugin adds the `archived` tag and moves the file. The agent never scans `Archive/`, so archived tasks drop out of future health check counts automatically.
 
+### 9. Schema diagnostic
+
+Run when something smells wrong: a task search returns nothing for a project the user knows exists, the user says a task is missing from their Kanban or plugin view, or the user reports something that contradicts what the agent believes.
+
+Scan `tasks_folder` (direct files only, exclude `Archive/`) and check each file for these known failure patterns:
+
+- `projects:` absent, or a plain string instead of a `[[wikilink]]`
+- `projects:` wikilink does not resolve to a real page in the vault
+- `tags:` does not include the `task` tag - task is invisible to all views
+- `projects:` or `contexts:` is a scalar string instead of a YAML list
+- `status:` is not one of `open`, `in-progress`, `done` (typo, wrong value)
+- `status: done` but no `completedDate` field
+- `archived` in `tags:` but `status:` is still `open` (confused state)
+
+Report what you find grouped by failure type. Offer to fix each; confirm before writing. Update `dateModified` on every repaired file.
+
 ---
 
 ## Creating Domain Views
@@ -367,7 +365,7 @@ Full reference: https://tasknotes.dev/views/
 6. The project note must exist before a task links to it - verify or create it first
 7. Read before editing - never overwrite from stale context
 8. Unknown projects require a config update first
-9. Stay in lane - see *What this skill does not do*. Never edit plugin `data.json`; never shell out to change plugin state. Plugin config changes go through Obsidian Settings, not the skill.
+9. Stay in lane - see *What this is* at the top of this skill. Never edit plugin `.json` files; never shell out to change plugin state. Plugin config changes go through Obsidian Settings, not the skill.
 
 ---
 
