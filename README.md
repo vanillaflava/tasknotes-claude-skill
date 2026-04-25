@@ -25,7 +25,7 @@ TaskNotes is a full-featured plugin. This skill covers a small slice of it.
 Features this skill does not support:
 
 - **HTTP API** - TaskNotes exposes a local REST API (`localhost:8080`) covering task queries, time tracking, Pomodoro, calendar integration, webhooks, and NLP parsing. This skill does not use any of it. If you need programmatic access to those features, the [HTTP API](https://tasknotes.dev/HTTP_API/) is the right path.
-- **Recurring tasks** - the skill can create a task file with recurrence fields, but it cannot complete individual instances or manage the recurrence lifecycle the way the plugin does.
+- **Recurring tasks** - the skill can create a task with a recurrence pattern (`recurrence` field, RFC 5545 RRULE format) and set the first scheduled occurrence. What it cannot do is complete individual instances: the plugin manages `scheduled` advancement, `complete_instances`, and the completion lifecycle at runtime. To use this, configure recurring task behaviour in Settings -> TaskNotes -> Features -> Recurring Tasks first - specifically whether due date offset should be maintained and whether anchor is scheduled or completion date.
 - **Time tracking and Pomodoro** - not accessible via file writes alone.
 - **Calendar integration** - Google Calendar, Outlook, and ICS subscription features are plugin-only.
 - **Reminders** - reminder scheduling is handled by the plugin at runtime, not in the file.
