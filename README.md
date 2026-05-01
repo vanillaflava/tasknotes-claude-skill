@@ -1,6 +1,6 @@
 # tasknotes-claude-skill
 
-![Release](https://img.shields.io/github/v/release/vanillaflava/tasknotes-claude-skill?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Claude](https://img.shields.io/badge/Claude-D97757?style=flat-square&logo=claude&logoColor=white) ![Obsidian](https://img.shields.io/badge/Obsidian-%23483699?style=flat-square&logo=obsidian&logoColor=white) ![TaskNotes](https://img.shields.io/badge/TaskNotes-plugin-blue?style=flat-square) ![MCP](https://img.shields.io/badge/MCP-filesystem-blue?style=flat-square)
+[![Release](https://img.shields.io/github/v/release/vanillaflava/tasknotes-claude-skill?style=flat-square)](https://github.com/vanillaflava/tasknotes-claude-skill/releases/latest) [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/vanillaflava/tasknotes-claude-skill/blob/master/LICENSE) [![Claude](https://img.shields.io/badge/Claude-D97757?style=flat-square&logo=claude&logoColor=white)](https://claude.ai) [![Obsidian](https://img.shields.io/badge/Obsidian-%23483699?style=flat-square&logo=obsidian&logoColor=white)](https://obsidian.md) [![TaskNotes](https://img.shields.io/badge/TaskNotes-plugin-blue?style=flat-square)](https://tasknotes.dev) [![MCP](https://img.shields.io/badge/MCP-filesystem-blue?style=flat-square)](https://modelcontextprotocol.io)
 
 Talk to your tasks. Ask what's open, file something from conversation, mark it done - all backed by plain Markdown files in your Obsidian vault. No API, no server, no HTTP calls.
 
