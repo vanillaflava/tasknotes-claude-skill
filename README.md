@@ -54,7 +54,7 @@ This skill has a hard dependency on [Obsidian](https://obsidian.md/) and the [Ta
 
 ## Installation
 
-Download `tasknotes.skill` from the [latest release](https://github.com/vanillaflava/tasknotes-claude-skill/releases/latest) and upload it in Claude Desktop under **Customize → Skills**.
+Download [**tasknotes.skill**](https://github.com/vanillaflava/tasknotes-claude-skill/releases/latest/download/tasknotes.skill) and upload it in Claude Desktop under **Customize → Skills**.
 
 The skill activates automatically for task-related conversational requests or via `/tasknotes`.
 
