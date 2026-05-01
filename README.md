@@ -1,16 +1,20 @@
 # tasknotes-claude-skill
 
-A Claude agent skill for basic task management against an Obsidian vault with the [TaskNotes](https://tasknotes.dev/) plugin. This was my first learning project for understanding and implementing agent skills, specifically with Claude.
+![Release](https://img.shields.io/github/v/release/vanillaflava/tasknotes-claude-skill?style=flat-square) ![License](https://img.shields.io/badge/license-MIT-green?style=flat-square) ![Claude](https://img.shields.io/badge/Claude-D97757?style=flat-square&logo=claude&logoColor=white) ![Obsidian](https://img.shields.io/badge/Obsidian-%23483699?style=flat-square&logo=obsidian&logoColor=white) ![TaskNotes](https://img.shields.io/badge/TaskNotes-plugin-blue?style=flat-square) ![MCP](https://img.shields.io/badge/MCP-filesystem-blue?style=flat-square)
+
+Talk to your tasks. Ask what's open, file something from conversation, mark it done - all backed by plain Markdown files in your Obsidian vault. No API, no server, no HTTP calls.
 
 **Not affiliated with or endorsed by the TaskNotes project.** This skill was built by me, for personal use, and shared as-is. The TaskNotes plugin is developed and maintained independently by [callumalpass](https://github.com/callumalpass/tasknotes).
 
 ## What this is
 
-A single installable skill that lets you talk to your tasks. Ask what's open, create a new one from conversation, mark something done, or let the agent manage its own Kanban board - all backed by plain Markdown files in your Obsidian vault. No API, no server, no HTTP calls.
+A single installable skill for task CRUD: ask what's open, create a task from conversation, update or close it. Tasks are `.md` files with YAML frontmatter. The skill reads a config file to know where they live and how to route them to the right project. It coexists cleanly with the TaskNotes plugin - tasks the agent creates sit in the same folder as tasks you create via the GUI, using the same schema.
 
-Tasks are `.md` files with YAML frontmatter. The skill reads a config file to know where they live and how to route them to the right project. It coexists cleanly with the TaskNotes plugin - tasks the agent creates sit in the same folder as tasks you create via the GUI, using the same schema.
+I use this for personal projects, work tracking, and the meta-work of running agent sessions themselves. The satisfying part: the agents file their own tasks, track what needs doing across sessions, and hand off cleanly to whoever picks up the work next.
 
-I use this for personal projects, work tracking, and the meta-work of running agent sessions themselves: the agents file their own tasks, track what needs doing across sessions, and hand off cleanly to whoever picks up the work next. If the filesystem MCP can reach your vault, it just works.
+**Tasks orient a fresh agent the same way a wiki Domain Home does.** When an agent starts a new chat, it reads the open tasks for a domain and immediately knows what's in progress, what was decided but not yet executed, what's blocked. No briefing needed. This is not incidental - it is the architecture. The agent loses its working memory at the end of every session by design, and tasks are part of what survives.
+
+**The Kanban board and the agent are looking at the same data differently.** In Obsidian, any task linked to a domain home via `projects: [[Domain Home]]` is rendered as a live Kanban card through the Relationships Widget - automatically, no configuration required beyond the link. This is a visual aid for you as the human reader. The agent never sees the Kanban itself; it discovers tasks by scanning the task files directly. Both mechanisms are reading the same underlying Markdown files. The Kanban is the surface; the files are the truth.
 
 ## What a task actually is
 
@@ -50,9 +54,7 @@ This skill has a hard dependency on [Obsidian](https://obsidian.md/) and the [Ta
 
 ## Installation
 
-1. Download `tasknotes.skill` from this repository
-2. In Claude Desktop, go to **Customize -> Skills**
-3. Upload the `.skill` file
+Download `tasknotes.skill` from the [latest release](https://github.com/vanillaflava/tasknotes-claude-skill/releases/latest) and upload it in Claude Desktop under **Customize → Skills**.
 
 The skill activates automatically for task-related conversational requests or via `/tasknotes`.
 
@@ -160,11 +162,21 @@ What happens to data once it reaches your provider depends on their privacy poli
 
 ## Works well with
 
-[llm-wiki-claude-skills](https://github.com/vanillaflava/llm-wiki-claude-skills) - my personal implementation of the [llm wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) pattern, and the reason this skill exists in the form it does.
+[llm-wiki-claude-skills](https://github.com/vanillaflava/llm-wiki-claude-skills) - my personal implementation of the [Karpathy LLM wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f), and the reason this skill exists in the form it does.
 
-The two together form a proper memory layer. The wiki carries accumulated knowledge - synthesised, crystallised, cross-linked. The tasks carry current intent: what is open, what was decided but not yet executed, what the next session needs to pick up. A fresh agent - whether that is a new chat cycle or a completely different domain agent picking up related work - reads the Kanban and knows exactly where things stand without anyone briefing them. The knowledge does not live in the chat history (that evaporates). It lives in the wiki and the tasks.
+The two together form a complete memory layer. The wiki carries accumulated knowledge - synthesised, crystallised, interlinked pages that compound over time. The tasks carry current intent: what is open, what was decided but not yet executed, what the next session needs to pick up. Neither requires the other, but the combination is where the interesting stuff happens.
 
-Domain home pages in the wiki make natural project anchors for the Relationships Widget. Tasks the agent files feed into the same compounding system. Neither requires the other, but the combination is where the interesting stuff happens.
+**The session cycling problem and how they solve it together.** Agents lose their working memory. The context window fills, things slow down, you start a fresh chat. Without structure, you spend the first ten minutes re-briefing the agent on where things stand. With the wiki and tasks in place, a fresh agent reads the Domain Home (current knowledge state) and open tasks (current work state) and picks up almost immediately.
+
+This works in three layers:
+
+- **Personal Preferences** (Claude Settings, system prompt elsewhere) carry your permanent working style and preferences into every conversation automatically.
+- **Project Instructions** (Claude's term; most providers have an equivalent) inject domain context before the chat starts. Point them at the Domain Home or paste a summary.
+- **Domain Home + open tasks** are the final layer. The Domain Home carries what is known; the open tasks carry what needs doing. A fresh agent reads both and is oriented without a briefing.
+
+**The Kanban board sits at the intersection.** Domain home pages in the wiki make natural project anchors. Any task filed with `projects: [[Domain Home]]` shows up as a live Kanban card in Obsidian via the Relationships Widget - you see the board without setting anything up beyond the link. The agent reads the same tasks from the files directly; the Kanban is your view of the same data, not a separate thing to maintain.
+
+The result: the wiki holds the knowledge, the tasks hold the intent, and a fresh agent can arrive at either without a handoff note from the previous session. That is the system working as designed.
 
 ## License
 
