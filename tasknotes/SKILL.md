@@ -1,9 +1,9 @@
 ---
 name: tasknotes
 description: Create, read, update, and complete tasks using the Obsidian TaskNotes plugin. Use when the user mentions tasks, to-dos, action items, open items, backlog, or says /tasknotes. Also use for casual mentions like "add that to my list", "don't forget to", "mark X as done", "what's on my plate", "what's open for X", or "what's in progress". Requires filesystem read/write access to the vault.
+metadata:
+  version: "3.3"
 ---
-
-<!-- version: 3.2 -->
 
 # TaskNotes
 
@@ -284,7 +284,7 @@ Never delete task files. Done tasks remain; TaskNotes views filter by status.
 ### 5. List tasks for a domain
 
 1. Read `tasknotes-config.md` for the project wikilink
-2. Search `tasks_folder` for files containing that wikilink. Search direct files only; exclude any `Archive/` subfolder from the scan and from all counts. Let the search run to full completion, do not stop early. Paginate with `get_more_search_results` until the search session reports no more results before reading or filtering.
+2. Search `tasks_folder` for files containing that wikilink. Search direct files only; exclude any `Archive/` subfolder from the scan and from all counts. Let the search run to full completion - paginate through all results until the search session reports no more results before reading or filtering. Do not stop early.
 3. Read frontmatter of each match: title, status, priority, due
 4. Present: `in-progress` first, then `open`; skip `done`
 
