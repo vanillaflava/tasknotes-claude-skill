@@ -1,6 +1,6 @@
-# tasknotes-claude-skill
+# tasknotes-skill
 
-[![Release](https://img.shields.io/github/v/release/vanillaflava/tasknotes-claude-skill?style=flat-square)](https://github.com/vanillaflava/tasknotes-claude-skill/releases/latest) [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/vanillaflava/tasknotes-claude-skill/blob/master/LICENSE) [![Claude](https://img.shields.io/badge/Claude-D97757?style=flat-square&logo=claude&logoColor=white)](https://claude.ai) [![Obsidian](https://img.shields.io/badge/Obsidian-%23483699?style=flat-square&logo=obsidian&logoColor=white)](https://obsidian.md) [![TaskNotes](https://img.shields.io/badge/TaskNotes-plugin-blue?style=flat-square)](https://tasknotes.dev) [![MCP](https://img.shields.io/badge/MCP-filesystem-blue?style=flat-square)](https://modelcontextprotocol.io)
+[![Release](https://img.shields.io/github/v/release/vanillaflava/tasknotes-skill?style=flat-square)](https://github.com/vanillaflava/tasknotes-skill/releases/latest) [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/vanillaflava/tasknotes-skill/blob/master/LICENSE) [![Agent Skills](https://img.shields.io/badge/Agent_Skills-compatible-brightgreen?style=flat-square)](https://agentskills.io/specification) [![Claude](https://img.shields.io/badge/Claude-D97757?style=flat-square&logo=claude&logoColor=white)](https://claude.ai) [![Obsidian](https://img.shields.io/badge/Obsidian-%23483699?style=flat-square&logo=obsidian&logoColor=white)](https://obsidian.md) [![TaskNotes](https://img.shields.io/badge/TaskNotes-plugin-blue?style=flat-square)](https://tasknotes.dev) [![MCP](https://img.shields.io/badge/MCP-filesystem-blue?style=flat-square)](https://modelcontextprotocol.io)
 
 Talk to your tasks. Ask what's open, file something from conversation, mark it done - all backed by plain Markdown files in your Obsidian vault. No API, no server, no HTTP calls.
 
@@ -48,13 +48,13 @@ If you need any of these, look at the [HTTP API](https://tasknotes.dev/HTTP_API/
 
 > **Note on Claude.ai web:** Completely untested with this skill, but Claude.ai's Google Drive connector could in principle support a vault stored in Google Drive. If you try this, please open an issue.
 
-This skill has a hard dependency on [Obsidian](https://obsidian.md/) and the [TaskNotes](https://tasknotes.dev/) plugin (which must be installed separately via the community plugin settings inside Obsidian). Unlike my general [llm-wiki-skills](https://github.com/vanillaflava/llm-wiki-claude-skills) (see below), it is not portable to other Markdown environments.
+This skill has a hard dependency on [Obsidian](https://obsidian.md/) and the [TaskNotes](https://tasknotes.dev/) plugin (which must be installed separately via the community plugin settings inside Obsidian). Unlike my general [llm-wiki-skills](https://github.com/vanillaflava/llm-wiki-skills) (see below), it is not portable to other Markdown environments.
 
 **Other LLM providers.** Agent skills are a [published open spec](https://agentskills.io/specification) and this skill was built and tested against Claude Desktop. Other providers that implement the skill spec should work with minor adaptation - primarily the trigger description and slash command behaviour, which vary by implementation. The core file operations are provider-agnostic.
 
 ## Installation
 
-Download [**tasknotes.skill**](https://github.com/vanillaflava/tasknotes-claude-skill/releases/latest/download/tasknotes.skill) and upload it in Claude Desktop under **Customize → Skills**.
+Download [**tasknotes.skill**](https://github.com/vanillaflava/tasknotes-skill/releases/latest/download/tasknotes.skill) and upload it in Claude Desktop under **Customize → Skills**.
 
 The skill activates automatically for task-related conversational requests or via `/tasknotes`.
 
@@ -162,7 +162,7 @@ What happens to data once it reaches your provider depends on their privacy poli
 
 ## Works well with
 
-[llm-wiki-claude-skills](https://github.com/vanillaflava/llm-wiki-claude-skills) - my personal implementation of the [Karpathy LLM wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f), and the reason this skill exists in the form it does.
+[llm-wiki-skills](https://github.com/vanillaflava/llm-wiki-skills) - my personal implementation of the [Karpathy LLM wiki pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f), and the reason this skill exists in the form it does.
 
 The two together form a complete memory layer. The wiki carries accumulated knowledge - synthesised, crystallised, interlinked pages that compound over time. The tasks carry current intent: what is open, what was decided but not yet executed, what the next session needs to pick up. Neither requires the other, but the combination is where the interesting stuff happens.
 
