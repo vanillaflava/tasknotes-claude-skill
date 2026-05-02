@@ -3,7 +3,7 @@ name: tasknotes
 description: Create, read, update, and complete tasks using the Obsidian TaskNotes plugin. Use when the user mentions tasks, to-dos, action items, open items, backlog, or says /tasknotes. Also use for casual mentions like "add that to my list", "don't forget to", "mark X as done", "what's on my plate", "what's open for X", or "what's in progress". Requires filesystem read/write access to the vault.
 ---
 
-<!-- version: 3.1 -->
+<!-- version: 3.2 -->
 
 # TaskNotes
 
@@ -132,6 +132,28 @@ blockedBy:
 
 **Task body:** Write enough context that any agent or human can pick up the task without the originating chat. Include: what needs doing and why, acceptance criteria as inline checklist items, constraints, links to related notes.
 
+**Suggested body structure** (use what applies - simple tasks do not need all sections):
+
+```markdown
+## Context
+Who asked, what session it came from, what triggered this task.
+
+## Problem or intent
+What is broken, missing, or unclear. What the task is trying to achieve.
+
+## Approach
+The shape of the answer. Include open questions explicitly.
+
+## Scope
+What is in. What is deliberately out.
+
+## Acceptance criteria
+- [ ] Binary checkable item
+- [ ] Another checkable item
+```
+
+This scaffold is a guide, not a template. A task that says "Fix the broken link in wiki-help.md" needs one sentence, not five sections. Use judgment.
+
 ---
 
 ## Organisation: Projects, Contexts, and Tags
@@ -200,6 +222,22 @@ On every task creation:
 **Tier 2 - Child task files:** When a subtask warrants its own status and notes, create it as a normal task file and set its `projects:` to a wikilink of the parent task title. The Relationships Widget surfaces child tasks in the parent's Subtasks tab automatically.
 
 Rule of thumb: inline checklists for steps within one task; child task files for work substantial enough to need its own status tracking.
+
+---
+
+## Quick Reference - Common Operations
+
+| I want to... | Workflow | Key step |
+|---|---|---|
+| Create a task | 1 | Verify project note exists before linking |
+| Read a task | 2 | Read the file; do not rely on memory |
+| Update a task | 3 | Read first, surgical edit, update `dateModified` |
+| Mark a task done | 4 | Set `status: done` + `completedDate: YYYY-MM-DD` |
+| List tasks for a project | 5 | Search by project wikilink from config |
+| Fix a GUI-created task | 6 | Adopt workflow - add missing fields |
+| Clean up done tasks | 8 | Housekeeping - guides user to plugin archive |
+| Run a schema diagnostic | 9 | Scan for missing or invalid fields |
+| Handle a recurring task | 10 | Set recurrence RRULE; never mark done via agent |
 
 ---
 
