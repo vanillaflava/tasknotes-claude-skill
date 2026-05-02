@@ -54,7 +54,15 @@ This skill has a hard dependency on [Obsidian](https://obsidian.md/) and the [Ta
 
 ## Installation
 
-Download [**tasknotes.skill**](https://github.com/vanillaflava/tasknotes-skill/releases/latest/download/tasknotes.skill) and upload it in Claude Desktop under **Customize → Skills**.
+**Claude Desktop:** Download [**tasknotes.skill**](https://github.com/vanillaflava/tasknotes-skill/releases/latest/download/tasknotes.skill) and upload it under **Customize → Skills**.
+
+**Other agents:** Use the `skills` CLI:
+
+```bash
+npx skills add vanillaflava/tasknotes-skill
+```
+
+To update, re-run the install command - it always fetches the latest version from master. `npx skills update` exists but has known issues with remote change detection.
 
 The skill activates automatically for task-related conversational requests or via `/tasknotes`.
 
