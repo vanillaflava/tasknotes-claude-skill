@@ -61,8 +61,10 @@ For time tracking, Pomodoro, calendar, and recurring task instance management wi
 - **Bases** core plugin enabled (required by TaskNotes v4)
 - **An agent with filesystem access.** The skill reads and writes files on your local disk. How you get access depends on your platform:
   - **Claude Desktop** has no native filesystem access. Add a filesystem MCP - [Desktop Commander](https://github.com/wonderwhy-er/DesktopCommanderMCP) or the [official Anthropic filesystem MCP](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem), both installable via **Customize → Connectors**. When choosing, look for directory scoping, per-tool permissions, and shell access restrictions; these matter for security and privacy (see below). Desktop Commander has all three and is what this skill was built and tested with.
-  - **Claude Code, Gemini CLI, OpenAI Codex CLI, and GitHub Copilot** have filesystem access built in. No MCP required.
-  - **Claude.ai web and mobile** cannot reach files on your disk. Completely untested with this skill; Claude.ai's Google Drive connector could in principle support a vault stored in Google Drive - if you try this, please open an issue.
+  - **Claude Co-Work and Claude Code** have filesystem access built in. No MCP required.
+  - **Gemini CLI, OpenAI Codex CLI, and GitHub Copilot** also have native filesystem access.
+  - **Claude.ai web** has no filesystem access and is not supported.
+  - **Claude iOS / Android** - the Dispatch feature in Claude Co-Work (Pro/Max) lets you assign tasks from your phone; Claude runs them on your desktop using the desktop's existing file access. Requires Claude Desktop running on your computer. This is not direct mobile filesystem access - the desktop does the work. Remote filesystem MCPs (such as Desktop Commander configured for remote access) exist but have not been tested with this skill.
 
 This skill has a hard dependency on [Obsidian](https://obsidian.md/) and the [TaskNotes](https://tasknotes.dev/) plugin. Unlike my general [llm-wiki-skills](https://github.com/vanillaflava/llm-wiki-skills), it is not portable to other Markdown environments.
 
