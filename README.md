@@ -1,14 +1,18 @@
 # tasknotes-skill
 
-[![Release](https://img.shields.io/github/v/release/vanillaflava/tasknotes-skill?style=flat-square)](https://github.com/vanillaflava/tasknotes-skill/releases/latest) [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/vanillaflava/tasknotes-skill/blob/master/LICENSE) [![Agent Skills](https://img.shields.io/badge/Agent_Skills-compatible-brightgreen?style=flat-square)](https://agentskills.io/specification) [![Claude](https://img.shields.io/badge/Claude-D97757?style=flat-square&logo=claude&logoColor=white)](https://claude.ai) [![Obsidian](https://img.shields.io/badge/Obsidian-%23483699?style=flat-square&logo=obsidian&logoColor=white)](https://obsidian.md) [![TaskNotes](https://img.shields.io/badge/TaskNotes-plugin-blue?style=flat-square)](https://tasknotes.dev) [![MCP](https://img.shields.io/badge/MCP-filesystem-blue?style=flat-square)](https://modelcontextprotocol.io)
+[![Release](https://img.shields.io/github/v/release/vanillaflava/tasknotes-skill?style=flat-square)](https://github.com/vanillaflava/tasknotes-skill/releases/latest) [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](https://github.com/vanillaflava/tasknotes-skill/blob/master/LICENSE) [![Agent Skills](https://img.shields.io/badge/Agent_Skills-compatible-brightgreen?style=flat-square)](https://agentskills.io/specification) [![Claude](https://img.shields.io/badge/Claude-D97757?style=flat-square&logo=claude&logoColor=white)](https://claude.ai) [![Obsidian](https://img.shields.io/badge/Obsidian-%23483699?style=flat-square&logo=obsidian&logoColor=white)](https://obsidian.md) [![TaskNotes](https://img.shields.io/badge/TaskNotes-plugin-blue?style=flat-square)](https://tasknotes.dev) [![MCP](https://img.shields.io/badge/MCP-compatible-blue?style=flat-square)](https://modelcontextprotocol.io)
 
-Talk to your tasks. Ask what's open, file something from conversation, mark it done - all backed by plain Markdown files in your Obsidian vault. No API, no server, no HTTP calls.
+Talk to your tasks. Ask what's open, file something from conversation, mark it done. Tasks are plain Markdown files in your Obsidian vault - the skill works with filesystem access alone, and gets richer query and tracking capabilities when the TaskNotes MCP server or HTTP API are also available.
 
 **Not affiliated with or endorsed by the TaskNotes project.** This skill was built by me, for personal use, and shared as-is. The TaskNotes plugin is developed and maintained independently by [callumalpass](https://github.com/callumalpass/tasknotes).
 
 ## What this is
 
-A single installable skill for task CRUD: ask what's open, create a task from conversation, update or close it. Tasks are `.md` files with YAML frontmatter. The skill reads a config file to know where they live and how to route them to the right project. It coexists cleanly with the TaskNotes plugin - tasks the agent creates sit in the same folder as tasks you create via the GUI, using the same schema.
+A single installable skill for task management: ask what's open, create a task from conversation, update or close it, check what's blocking you, track time, run a schema diagnostic. Tasks are `.md` files with YAML frontmatter. The skill reads a config file to know where they live and how to route them to the right project.
+
+The skill adapts to the environment. With filesystem access alone it covers task CRUD, file-based querying, body and checklist reads, and schema diagnostics - and works even when Obsidian is closed. When the TaskNotes MCP server or HTTP API are also available (Obsidian running, integration toggles enabled), it uses those as the primary path for frontmatter operations and gains access to time tracking, Pomodoro, calendar events, and per-instance recurring task completion. The surface lookup table in the skill body documents exactly what is available on each path.
+
+It coexists cleanly with the TaskNotes plugin - tasks the agent creates sit in the same folder as tasks you create via the GUI, using the same schema.
 
 I use this for personal projects, work tracking, and the meta-work of running agent sessions themselves. The satisfying part: the agents file their own tasks, track what needs doing across sessions, and hand off cleanly to whoever picks up the work next.
 
@@ -22,29 +26,48 @@ TaskNotes follows the "one note per task" principle. That means each task is a f
 
 This skill treats tasks accordingly. Creating a task is creating a document, not just a to-do entry. A task for a complex project might accumulate research, open questions, and interim decisions in its body across multiple agent sessions - the same way any note grows richer the more you return to it.
 
-## What this does not cover
+## What this covers depends on your setup
 
-TaskNotes is a full-featured plugin. This skill covers a small slice of it.
+Capabilities vary by environment. The skill probes what is available at the start of each session and routes accordingly.
 
-Features this skill does not support:
+**Filesystem access alone** (minimum - works even when Obsidian is closed):
+- Task CRUD, file-based querying, schema diagnostics
+- Full body and checklist reads (filesystem is the only path that can return body content)
+- Recurring task creation (sets the RRULE and first scheduled date)
 
-- **HTTP API** - TaskNotes exposes a local REST API (`localhost:8080`) covering task queries, time tracking, Pomodoro, calendar integration, webhooks, and NLP parsing. This skill does not use any of it. If you need programmatic access to those features, the [HTTP API](https://tasknotes.dev/HTTP_API/) is the right path.
-- **Recurring tasks** - the skill can create a task with a recurrence pattern (`recurrence` field, RFC 5545 RRULE format) and set the first scheduled occurrence. What it cannot do is complete individual instances: the plugin manages `scheduled` advancement, `complete_instances`, and the completion lifecycle at runtime. To use this, configure recurring task behaviour in Settings -> TaskNotes -> Features -> Recurring Tasks first - specifically whether due date offset should be maintained and whether anchor is scheduled or completion date.
-- **Time tracking and Pomodoro** - not accessible via file writes alone.
-- **Calendar integration** - Google Calendar, Outlook, and ICS subscription features are plugin-only.
-- **Reminders** - reminder scheduling is handled by the plugin at runtime, not in the file.
-- **Inline task conversion** - the NLP-based checkbox-to-task workflow is GUI-only.
-- **Webhooks** - plugin-only.
-- **Status workflow configuration** - the plugin supports configurable status transition workflows; the skill writes status values directly without validating against your configured workflow.
+**HTTP API or MCP available** (Obsidian running, integration toggles enabled - adds):
+- Reliable filtered queries without scanning all files
+- Time tracking and Pomodoro sessions
+- Calendar event reads
+- Per-instance recurring task completion
 
-If you need any of these, look at the [HTTP API](https://tasknotes.dev/HTTP_API/), the [Obsidian CLI](https://tasknotes.dev/obsidian-cli/), or the [mdbase-tasknotes CLI](https://tasknotes.dev/mdbase-tasknotes-cli/).
+**Body content gap:** Both MCP and HTTP API return frontmatter only - this is an upstream limitation of the plugin's metadata cache (GitHub issue [#1858](https://github.com/callumalpass/tasknotes/issues/1858)). Body content always requires a direct filesystem read.
+
+**Not covered regardless of setup:**
+
+- **Reminders** - scheduling and firing are runtime-only plugin behavior; not accessible via any external path
+- **Inline task conversion** - the NLP checkbox-to-task workflow is GUI-only
+- **Status workflow validation** - the skill writes status values directly without checking your configured workflow transitions
+- **Webhooks** - no dedicated skill workflow; use the [HTTP API](https://tasknotes.dev/HTTP_API/) directly if you need this
+- **Plugin configuration** - settings, `.json` config files, and any feature that requires writing to Obsidian's internal state are out of scope
+
+For time tracking, Pomodoro, calendar, and recurring task instance management without MCP or HTTP API access, the [mdbase-tasknotes CLI](https://tasknotes.dev/mdbase-tasknotes-cli/) is a standalone alternative that reads vault files directly.
 
 ## Requirements
+
+**Required (baseline - filesystem path):**
 
 - **Obsidian** with the **TaskNotes plugin v4+** installed and enabled
 - **Bases** core plugin enabled (required by TaskNotes v4)
 - **Claude Desktop or Claude Code** (required - Claude.ai web and mobile cannot connect to local filesystem tools)
 - **A filesystem MCP tool.** The minimum is [Anthropic's filesystem MCP](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem), available in Claude Desktop under **Customize -> Connectors**. Many alternatives exist - the MCP ecosystem moves quickly. When choosing one, look for directory scoping, per-tool permissions, and shell access restrictions; these matter for security and privacy (see below). [Desktop Commander](https://github.com/wonderwhy-er/DesktopCommanderMCP), also installable via Customize -> Connectors, has all three and is what this skill was built and tested with.
+
+**Optional (unlocks MCP and HTTP API paths):**
+
+- **TaskNotes HTTP API:** enable in Settings → TaskNotes → Integrations → HTTP API. Adds reliable filtered queries, time tracking, Pomodoro, calendar events, and recurring task instance completion via REST calls to `localhost:8080`.
+- **TaskNotes MCP server:** enable in Settings → TaskNotes → Integrations → MCP Server (requires HTTP API toggle also on). Exposes 24 tools directly to the agent - the preferred path when Obsidian is running. Configure in Claude Desktop via `claude_desktop_config.json` using `mcp-remote http://localhost:8080/mcp`; see `references/tasknotes-help.md` in the skill for the full config block and multi-platform setup.
+
+Both require Obsidian to be running. The skill falls back to filesystem access automatically if either is unavailable.
 
 > **Note on Claude.ai web:** Completely untested with this skill, but Claude.ai's Google Drive connector could in principle support a vault stored in Google Drive. If you try this, please open an issue.
 

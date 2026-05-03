@@ -1,6 +1,6 @@
 ---
 name: tasknotes
-description: "Manage tasks in an Obsidian TaskNotes vault: create, read, update, and complete tasks; query and filter by status, project, or priority; mark tasks done or in progress; check what is open or overdue; investigate tasks missing from views or boards; troubleshoot TaskNotes MCP or API connections; set up or configure TaskNotes; run a schema diagnostic; or manage time tracking and pomodoro sessions. Always use this skill when the user mentions tasks, to-dos, action items, open items, what is on their plate, what is blocking them, or what is due. Also use when the user says things like 'remind me to', 'I need to follow up on', 'don't let me forget', 'track this for me', 'what's left for X', or 'mark this done' — even if TaskNotes is not mentioned. When in doubt whether a task operation is being requested, use this skill."
+description: "Manage tasks in an Obsidian TaskNotes vault. Use for creating, reading, updating, or completing tasks; checking what is open or in progress; adding items to a list; marking tasks done or in progress; updating task status or priority; investigating why a task is missing from a view or board; troubleshooting TaskNotes MCP or API connection issues; setting up or configuring TaskNotes; or running a schema diagnostic on task files. Routes automatically to the best available access method: MCP server, HTTP API, or direct file access. Bundled help at references/tasknotes-help.md."
 metadata:
   version: "4.0"
 ---
@@ -432,7 +432,13 @@ Files in cloud-synced vaults may be zero-byte placeholders when not locally down
 
 - Modify Obsidian settings or plugin state
 - Edit `.json` plugin config files
-- Replicate event-driven plugin behaviours: archiving, reminders, time tracking, Pomodoro, per-instance recurring task completion
-- Return task body content via MCP or HTTP API (upstream limitation - use filesystem read)
+- Schedule or manage reminders (runtime-only plugin behavior)
+- Convert inline Markdown checkboxes to tasks (GUI-only NLP workflow)
+- Validate status transitions against a configured custom workflow (writes status values directly)
+- Access event-driven archiving behavior (plugin-only at runtime)
 
-If a request cannot be fulfilled by any of the three paths above, decline and explain. Point the user to `references/tasknotes-help.md` for setup guidance.
+**Environment-dependent capabilities:** Time tracking, Pomodoro, calendar events, and per-instance recurring task completion are available via MCP or HTTP API when those surfaces are present - but not via filesystem writes alone. What the skill can do depends on what the environment provides. See the surface lookup table in Step 0.
+
+**Body content:** MCP and HTTP API return frontmatter only (upstream limitation, GitHub issue #1858). Task body content always requires a direct filesystem file read regardless of which primary path is active.
+
+If a request cannot be fulfilled by any available path, decline and explain. Point the user to `references/tasknotes-help.md` for setup guidance.
