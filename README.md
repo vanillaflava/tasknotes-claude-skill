@@ -55,39 +55,52 @@ For time tracking, Pomodoro, calendar, and recurring task instance management wi
 
 ## Requirements
 
-**Required (baseline - filesystem path):**
+**Required:**
 
 - **Obsidian** with the **TaskNotes plugin v4+** installed and enabled
 - **Bases** core plugin enabled (required by TaskNotes v4)
-- **Claude Desktop or Claude Code** (required - Claude.ai web and mobile cannot connect to local filesystem tools)
-- **A filesystem MCP tool.** The minimum is [Anthropic's filesystem MCP](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem), available in Claude Desktop under **Customize -> Connectors**. Many alternatives exist - the MCP ecosystem moves quickly. When choosing one, look for directory scoping, per-tool permissions, and shell access restrictions; these matter for security and privacy (see below). [Desktop Commander](https://github.com/wonderwhy-er/DesktopCommanderMCP), also installable via Customize -> Connectors, has all three and is what this skill was built and tested with.
+- **An agent with filesystem access.** The skill reads and writes files on your local disk. How you get access depends on your platform:
+  - **Claude Desktop** has no native filesystem access. Add a filesystem MCP - [Desktop Commander](https://github.com/wonderwhy-er/DesktopCommanderMCP) or the [official Anthropic filesystem MCP](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem), both installable via **Customize → Connectors**. When choosing, look for directory scoping, per-tool permissions, and shell access restrictions; these matter for security and privacy (see below). Desktop Commander has all three and is what this skill was built and tested with.
+  - **Claude Code, Gemini CLI, OpenAI Codex CLI, and GitHub Copilot** have filesystem access built in. No MCP required.
+  - **Claude.ai web and mobile** cannot reach files on your disk. Completely untested with this skill; Claude.ai's Google Drive connector could in principle support a vault stored in Google Drive - if you try this, please open an issue.
+
+This skill has a hard dependency on [Obsidian](https://obsidian.md/) and the [TaskNotes](https://tasknotes.dev/) plugin. Unlike my general [llm-wiki-skills](https://github.com/vanillaflava/llm-wiki-skills), it is not portable to other Markdown environments.
 
 **Optional (unlocks MCP and HTTP API paths):**
 
 - **TaskNotes HTTP API:** enable in Settings → TaskNotes → Integrations → HTTP API. Adds reliable filtered queries, time tracking, Pomodoro, calendar events, and recurring task instance completion via REST calls to `localhost:8080`.
-- **TaskNotes MCP server:** enable in Settings → TaskNotes → Integrations → MCP Server (requires HTTP API toggle also on). Exposes 24 tools directly to the agent - the preferred path when Obsidian is running. Configure in Claude Desktop via `claude_desktop_config.json` using `mcp-remote http://localhost:8080/mcp`; see `references/tasknotes-help.md` in the skill for the full config block and multi-platform setup.
+- **TaskNotes MCP server:** enable in Settings → TaskNotes → Integrations → MCP Server (requires HTTP API toggle also on). Exposes 24 tools directly to the agent - the preferred path when Obsidian is running. See `references/tasknotes-help.md` in the skill for setup config and multi-platform instructions.
 
 Both require Obsidian to be running. The skill falls back to filesystem access automatically if either is unavailable.
 
-> **Note on Claude.ai web:** Completely untested with this skill, but Claude.ai's Google Drive connector could in principle support a vault stored in Google Drive. If you try this, please open an issue.
-
-This skill has a hard dependency on [Obsidian](https://obsidian.md/) and the [TaskNotes](https://tasknotes.dev/) plugin (which must be installed separately via the community plugin settings inside Obsidian). Unlike my general [llm-wiki-skills](https://github.com/vanillaflava/llm-wiki-skills) (see below), it is not portable to other Markdown environments.
-
-**Other LLM providers.** Agent skills are a [published open spec](https://agentskills.io/specification) and this skill was built and tested against Claude Desktop. Other providers that implement the skill spec should work with minor adaptation - primarily the trigger description and slash command behaviour, which vary by implementation. The core file operations are provider-agnostic.
-
 ## Installation
 
-**Claude Desktop:** Download [**tasknotes.skill**](https://github.com/vanillaflava/tasknotes-skill/releases/latest/download/tasknotes.skill) and upload it under **Customize → Skills**.
+### Claude Desktop
 
-**Other agents:** Use the `skills` CLI:
+Download [**tasknotes.skill**](https://github.com/vanillaflava/tasknotes-skill/releases/latest/download/tasknotes.skill) and upload it under **Customize → Skills**.
+
+The skill activates automatically for task-related conversational requests or via `/tasknotes`.
+
+### Other agents (Claude Code, Gemini CLI, Codex CLI, GitHub Copilot, and more)
+
+Use the `skills` CLI:
 
 ```bash
 npx skills add vanillaflava/tasknotes-skill
 ```
 
-To update, re-run the install command - it always fetches the latest version from master. `npx skills update` exists but has known issues with remote change detection.
+Or install manually - copy the `tasknotes/` folder into your agent's skills directory:
 
-The skill activates automatically for task-related conversational requests or via `/tasknotes`.
+```
+Claude Code:     ~/.claude/skills/tasknotes/
+Codex CLI:       ~/.codex/skills/tasknotes/
+Gemini CLI:      ~/.gemini/skills/tasknotes/
+GitHub Copilot:  configure via chat.agentSkillsLocations in VS Code
+```
+
+Copy the **entire `tasknotes/` folder**, not just `SKILL.md` - the skill bundles reference files in `references/` that it reads at runtime.
+
+To update, re-run the install command - it always fetches the latest version from master. `npx skills update` exists but has known issues with remote change detection.
 
 ## Getting started
 
